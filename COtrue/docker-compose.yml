@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  flask_app:
+    build: .
+    ports:
+      - "5000:5000"
+    volumes:
+      - .:/app
+    depends_on:
+      - docker_runner
+    environment:
+      - FLASK_ENV=development
+      - FLASK_APP=app.py
+
+  docker_runner:
+    image: docker:latest
+    command: sh -c "while sleep 1000; do :; done"
+    privileged: true
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  web:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - ./templates:/usr/share/nginx/html

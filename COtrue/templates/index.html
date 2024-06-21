@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CoTrue Analyzer</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color:#a9bba8;
+      box-sizing: border-box;
+    }
+
+    .container {
+      max-width: 800px;
+      margin: 20px auto;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #a4b79a;
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    textarea {
+      
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 10px;
+      border: 1px solid #00ff1a;
+      border-radius: 5px;
+      resize: vertical;
+    }
+
+    select,
+    button {
+      padding: 10px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      background-color: #fff;
+      cursor: pointer;
+      margin-bottom: 10px;
+    }
+
+    button {
+      background-color: #09ff00dd;
+      color: #334933;
+    }
+
+    pre {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      background-color: #fff;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      padding: 10px;
+      margin-bottom: 10px;
+    }
+
+    .carbon-emission {
+      white-space: pre-wrap;
+      word-wrap: break-word;
+      margin-bottom: 10px;
+    }
+
+    .comparison-info {
+      margin-top: 20px;
+    }
+
+    .comparison-info p {
+      margin: 5px 0;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>CoTrue Analysis</h1>
+    <form id="codeForm">
+      <textarea id="code" name="code" rows="10" cols="30" placeholder="Enter your code here"></textarea>
+      <select id="option" name="option" onchange="toggleComparison()">
+        <option value="analyze">Analyze Code</option>
+        <option value="compare">Compare Code</option>
+      </select>
+      <textarea id="compareCode" name="compareCode" rows="10" cols="30" style="display: none;" placeholder="Enter code to compare"></textarea>
+      <select id="language" name="language">
+        <option value="python">Python</option>
+        <option value="c">C</option>
+      </select>
+      <button type="submit"  color="green">Run Code</button>
+    </form>
+    <pre id="output"></pre>
+    <p class="carbon-emission" id="carbonEmission" style="display: none;"></p>
+    <div class="comparison-info" style="display: none;">
+      <pre id="compareOutput"></pre>
+      <p id="compareCarbonEmission"></p>
+      <p id="betterCode"></p>
+    </div>
+  </div>
+
+  <script>
+    function toggleComparison() {
+      const option = document.getElementById('option').value;
+      const compareCode = document.getElementById('compareCode');
+      const comparisonInfo = document.querySelector('.comparison-info');
+
+      if (option === 'compare') {
+        compareCode.style.display = 'block';
+        comparisonInfo.style.display = 'block';
+      } else {
+        compareCode.style.display = 'none';
+        comparisonInfo.style.display = 'none';
+      }
+    }
+
+    document.getElementById('codeForm').addEventListener('submit', async function(event) {
+      event.preventDefault();
+      const option = document.getElementById('option').value;
+      const code = document.getElementById('code').value;
+      const language = document.getElementById('language').value;
+      let body = { code, language };
+
+      if (option === 'compare') {
+        const compareCode = document.getElementById('compareCode').value;
+        body.compareCode = compareCode;
+      }
+
+      const response = await fetch('/run_code', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+      const result = await response.json();
+      document.getElementById('output').textContent = result.output || result.error;
+      const carbonEmissionElement = document.getElementById('carbonEmission');
+      if (!result.error) {
+        carbonEmissionElement.textContent = `Carbon Emission: ${result.carbonEmission} kg CO2`;
+        carbonEmissionElement.style.display = 'block';
+      } else {
+        carbonEmissionElement.style.display = 'none';
+      }
+
+      if (option === 'compare') {
+        document.getElementById('compareOutput').textContent = result.compareOutput || result.error;
+        document.getElementById('compareCarbonEmission').textContent = `Carbon Emission: ${result.compareCarbonEmission} kg CO2`;
+        document.getElementById('betterCode').textContent = `The better code is: ${result.betterCode === 'code' ? 'Code 1' : 'Code 2'}`;
+      }
+    });
+  </script>
+</body>
+</html>
